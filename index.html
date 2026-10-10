@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypermall Calculator</title>
+<meta name="description" content="Unofficial fee, validator income and staking calculator for Hypermall on Trac Network.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f5f1; --card: #ffffff; --ink: #1b1d22; --mute: #6b6f78; --line: #e4e2db;
+  --acc: #e8730c; --acc2: #1f7a5a; --bad: #c0392b; --field: #faf9f6; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121317; --card: #1b1d23; --ink: #ecebe6; --mute: #9a9ea8; --line: #2b2e36;
+  --acc: #ff9a3c; --acc2: #4cc39a; --bad: #ff6b5b; --field: #15161b; --shadow: none;
+} }
+:root[data-theme="dark"] {
+  --bg: #121317; --card: #1b1d23; --ink: #ecebe6; --mute: #9a9ea8; --line: #2b2e36;
+  --acc: #ff9a3c; --acc2: #4cc39a; --bad: #ff6b5b; --field: #15161b; --shadow: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 28px 16px 60px; }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -.01em; }
+.sub { color: var(--mute); margin: 0; max-width: 620px; }
+.badge { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--acc); border: 1px solid var(--acc); border-radius: 99px; padding: 1px 8px; margin-bottom: 8px; }
+.tools { display: flex; gap: 6px; }
+.tools button { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.tools button.on { border-color: var(--acc); color: var(--acc); }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--mute); padding: 10px 14px; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.tabs button.on { color: var(--ink); border-color: var(--acc); }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+.card h2 { font-size: 15px; margin: 0 0 14px; }
+label { display: block; font-size: 13px; color: var(--mute); margin: 0 0 4px; }
+.f { margin-bottom: 12px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+input, select { width: 100%; background: var(--field); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 500 14px "JetBrains Mono", monospace; }
+input:focus, select:focus { outline: 2px solid color-mix(in srgb, var(--acc) 40%, transparent); border-color: var(--acc); }
+.hint { font-size: 12px; color: var(--mute); margin-top: 3px; }
+.out { display: grid; gap: 10px; }
+.kpi { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.kpi:last-child { border-bottom: 0; }
+.kpi span { color: var(--mute); font-size: 13px; }
+.kpi b { font: 600 16px "JetBrains Mono", monospace; text-align: right; }
+.big { background: color-mix(in srgb, var(--acc) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--acc) 35%, var(--line)); border-radius: 12px; padding: 14px; }
+.big span { font-size: 13px; color: var(--mute); }
+.big b { display: block; font: 700 28px "JetBrains Mono", monospace; color: var(--acc); margin-top: 2px; }
+.pos { color: var(--acc2) !important; } .neg { color: var(--bad) !important; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: right; padding: 7px 6px; border-bottom: 1px solid var(--line); font-family: "JetBrains Mono", monospace; }
+th { color: var(--mute); font: 600 12px Inter, sans-serif; }
+th:first-child, td:first-child { text-align: left; }
+.tablewrap { overflow-x: auto; }
+.note { font-size: 12.5px; color: var(--mute); margin-top: 18px; line-height: 1.6; }
+.note a { color: var(--acc); }
+.hide { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="badge" data-t="unofficial">Unofficial · community tool</div>
+      <h1 data-t="title">Hypermall Calculator</h1>
+      <p class="sub" data-t="sub">Estimate trading fees, validator income and staking rewards on Hypermall — the P2P exchange for TAP Protocol assets on Trac Network.</p>
+    </div>
+    <div class="tools">
+      <button id="lang-en" class="on">EN</button><button id="lang-ru">RU</button>
+      <button id="theme" title="Theme">◐</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="trade" class="on" data-t="tTrade">Trader fees</button>
+    <button data-tab="val" data-t="tVal">Validator income</button>
+    <button data-tab="stake" data-t="tStake">Staking</button>
+  </nav>
+
+  <!-- TRADER -->
+  <section id="trade" class="grid">
+    <div class="card">
+      <h2 data-t="inputs">Inputs</h2>
+      <div class="f"><label data-t="size">Order size (USD)</label><input id="tSize" type="number" value="1000" min="0" step="any"></div>
+      <div class="row2">
+        <div class="f"><label data-t="makerFee">Maker fee %</label><input id="tMaker" type="number" value="0.4" step="0.01"></div>
+        <div class="f"><label data-t="takerFee">Taker fee %</label><input id="tTaker" type="number" value="0.6" step="0.01"></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label data-t="buyAs">Buy as</label><select id="tBuy"><option value="m" data-t="maker">Maker (limit)</option><option value="t" selected data-t="taker">Taker (market)</option></select></div>
+        <div class="f"><label data-t="sellAs">Sell as</label><select id="tSell"><option value="m" data-t="maker">Maker (limit)</option><option value="t" selected data-t="taker">Taker (market)</option></select></div>
+      </div>
+      <div class="f"><label data-t="trades">Round trips per month</label><input id="tN" type="number" value="10" min="0" step="1"></div>
+      <div class="hint" data-t="tradeHint">Defaults from the Trac docs: maker 0.4%, taker 0.6%.</div>
+    </div>
+    <div class="card out">
+      <div class="big"><span data-t="beMove">Price must rise at least</span><b id="oBE">–</b></div>
+      <div class="kpi"><span data-t="buyFee">Fee on buy</span><b id="oBuyFee">–</b></div>
+      <div class="kpi"><span data-t="sellFee">Fee on sell</span><b id="oSellFee">–</b></div>
+      <div class="kpi"><span data-t="rtCost">Round-trip cost</span><b id="oRT">–</b></div>
+      <div class="kpi"><span data-t="moCost">Fees per month</span><b id="oMo">–</b></div>
+      <div class="kpi"><span data-t="saveMaker">Saved by using limit orders</span><b id="oSave" class="pos">–</b></div>
+    </div>
+  </section>
+
+  <!-- VALIDATOR -->
+  <section id="val" class="grid hide">
+    <div class="card">
+      <h2 data-t="inputs">Inputs</h2>
+      <div class="f"><label data-t="vol">Hypermall daily volume (USD)</label><input id="vVol" type="number" value="100000" min="0" step="any"></div>
+      <div class="row2">
+        <div class="f"><label data-t="myLic">Your validator licenses</label><input id="vMine" type="number" value="4" min="0" step="1"></div>
+        <div class="f"><label data-t="allVal">Active validators total</label><input id="vAll" type="number" value="200" min="1" step="1"></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label data-t="feeSum">Maker + taker fee %</label><input id="vFee" type="number" value="1.0" step="0.01"></div>
+        <div class="f"><label data-t="valShare">Validator share of fees %</label><input id="vShare" type="number" value="50" step="1"></div>
+      </div>
+      <div class="f"><label data-t="cost">Your running costs per month (USD)</label><input id="vCost" type="number" value="40" min="0" step="any"></div>
+      <div class="hint" data-t="valHint">Assumes users pick validators at random, so your share of signed trades ≈ your licenses ÷ all validators. Fast, reliable validators may get more.</div>
+    </div>
+    <div class="card out">
+      <div class="big"><span data-t="netMo">Your net income per month</span><b id="oVNet">–</b></div>
+      <div class="kpi"><span data-t="shareSigned">Your share of signed trades</span><b id="oVPct">–</b></div>
+      <div class="kpi"><span data-t="netFees">All network fees per day</span><b id="oVFees">–</b></div>
+      <div class="kpi"><span data-t="grossDay">Your gross per day</span><b id="oVDay">–</b></div>
+      <div class="kpi"><span data-t="grossYr">Your gross per year</span><b id="oVYr">–</b></div>
+      <div class="kpi"><span data-t="beVol">Daily volume to cover costs</span><b id="oVBE">–</b></div>
+      <div class="tablewrap"><table id="vTable"><thead><tr><th data-t="scVol">Daily volume</th><th data-t="scMo">Net / month</th><th data-t="scYr">Net / year</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- STAKING -->
+  <section id="stake" class="grid hide">
+    <div class="card">
+      <h2 data-t="inputs">Inputs</h2>
+      <div class="f"><label data-t="sVol">Hypermall daily volume (USD)</label><input id="sVol" type="number" value="100000" min="0" step="any"></div>
+      <div class="row2">
+        <div class="f"><label data-t="feeSum">Maker + taker fee %</label><input id="sFee" type="number" value="1.0" step="0.01"></div>
+        <div class="f"><label data-t="stakeShare">Stakers' share of fees %</label><input id="sShare" type="number" value="25" step="1"></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label data-t="myStake">Your stake (TAP)</label><input id="sMine" type="number" value="10000" min="0" step="any"></div>
+        <div class="f"><label data-t="allStake">Total staked (TAP)</label><input id="sAll" type="number" value="50000000" min="1" step="any"></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label data-t="tapPrice">TAP price (USD)</label><input id="sPrice" type="number" value="0.5" min="0" step="any"></div>
+        <div class="f"><label data-t="mult">Your lock bonus ×</label><input id="sMult" type="number" value="1" min="0" step="0.1"></div>
+      </div>
+      <div class="hint" data-t="stakeHint">Rewards are split by stake size and lock period. The 25% stakers' share was announced by Trac; check the app for the current figure.</div>
+    </div>
+    <div class="card out">
+      <div class="big"><span data-t="apr">Estimated APR</span><b id="oSAPR">–</b></div>
+      <div class="kpi"><span data-t="stakeVal">Your stake value</span><b id="oSVal">–</b></div>
+      <div class="kpi"><span data-t="poolDay">Stakers' pool per day</span><b id="oSPool">–</b></div>
+      <div class="kpi"><span data-t="myShareS">Your share of the pool</span><b id="oSPct">–</b></div>
+      <div class="kpi"><span data-t="rewMo">Your reward per month</span><b id="oSMo">–</b></div>
+      <div class="kpi"><span data-t="rewYr">Your reward per year</span><b id="oSYr">–</b></div>
+    </div>
+  </section>
+
+  <p class="note" data-t="note">Estimates only, not financial advice. Hypermall is an order-book exchange (maker/taker), not an AMM, so there is no impermanent loss — but token prices can still fall. Fee figures come from the <a href="https://docs.trac.network/real-world-examples/hypermall/fee-structure-in-hypermall" target="_blank" rel="noopener">Trac docs</a>. Hypermall has no public data API yet, so volume and staking totals are entered by hand. Nothing here connects to a wallet or asks for keys.</p>
+</div>
+
+<script>
+const T = {
+  ru: {
+    unofficial: "Неофициальный · инструмент сообщества", title: "Калькулятор Hypermall",
+    sub: "Комиссии трейдера, доход валидатора и награды за стейкинг на Hypermall — P2P-бирже токенов TAP Protocol в сети Trac.",
+    tTrade: "Комиссии трейдера", tVal: "Доход валидатора", tStake: "Стейкинг", inputs: "Ввод",
+    size: "Размер ордера (USD)", makerFee: "Комиссия мейкера %", takerFee: "Комиссия тейкера %",
+    buyAs: "Покупка как", sellAs: "Продажа как", maker: "Мейкер (лимитный)", taker: "Тейкер (рыночный)",
+    trades: "Сделок туда-обратно в месяц", tradeHint: "По умолчанию из документации Trac: мейкер 0,4%, тейкер 0,6%.",
+    beMove: "Цена должна вырасти минимум на", buyFee: "Комиссия при покупке", sellFee: "Комиссия при продаже",
+    rtCost: "Цена сделки туда-обратно", moCost: "Комиссии за месяц", saveMaker: "Экономия на лимитных ордерах",
+    vol: "Дневной оборот Hypermall (USD)", myLic: "Ваших лицензий валидатора", allVal: "Всего активных валидаторов",
+    feeSum: "Мейкер + тейкер %", valShare: "Доля валидаторов в комиссиях %", cost: "Ваши расходы в месяц (USD)",
+    valHint: "Считаем, что пользователи выбирают валидатора случайно, поэтому ваша доля сделок ≈ ваши лицензии ÷ все валидаторы. Быстрые и стабильные валидаторы могут получать больше.",
+    netMo: "Ваш чистый доход в месяц", shareSigned: "Ваша доля подписанных сделок", netFees: "Все комиссии сети в день",
+    grossDay: "Ваш доход в день (до расходов)", grossYr: "Ваш доход в год (до расходов)", beVol: "Оборот в день, чтобы окупить расходы",
+    scVol: "Оборот в день", scMo: "Чистыми в месяц", scYr: "Чистыми в год",
+    sVol: "Дневной оборот Hypermall (USD)", stakeShare: "Доля стейкеров в комиссиях %", myStake: "Ваш стейк (TAP)",
+    allStake: "Всего в стейкинге (TAP)", tapPrice: "Цена TAP (USD)", mult: "Ваш бонус за срок ×",
+    stakeHint: "Награды делятся по размеру стейка и сроку блокировки. Долю стейкеров 25% объявляла Trac — актуальную цифру проверьте в приложении.",
+    apr: "Примерная годовая доходность", stakeVal: "Стоимость вашего стейка", poolDay: "Пул стейкеров в день",
+    myShareS: "Ваша доля пула", rewMo: "Ваша награда в месяц", rewYr: "Ваша награда в год",
+    note: 'Только оценка, не финансовый совет. Hypermall — биржа с книгой ордеров (мейкер/тейкер), а не AMM, поэтому непостоянных потерь нет, но цена токенов может упасть. Комиссии взяты из <a href="https://docs.trac.network/real-world-examples/hypermall/fee-structure-in-hypermall" target="_blank" rel="noopener">документации Trac</a>. Публичного API с данными у Hypermall пока нет, поэтому оборот и объём стейкинга вводятся вручную. Калькулятор не подключается к кошельку и не просит ключи.'
+  }
+};
+const EN = {}; document.querySelectorAll("[data-t]").forEach(e => EN[e.dataset.t] = e.innerHTML);
+let lang = "en";
+const $ = id => document.getElementById(id), v = id => Math.max(0, parseFloat($(id).value) || 0);
+const usd = x => (x < 0 ? "−$" : "$") + Math.abs(x).toLocaleString("en-US", { maximumFractionDigits: Math.abs(x) < 100 ? 2 : 0 });
+const pct = (x, d = 2) => (x * 100).toLocaleString("en-US", { maximumFractionDigits: d }) + "%";
+const tap = x => x.toLocaleString("en-US", { maximumFractionDigits: 0 }) + " TAP";
+
+function calc() {
+  // trader
+  const S = v("tSize"), m = v("tMaker") / 100, t = v("tTaker") / 100, fb = $("tBuy").value === "m" ? m : t, fs = $("tSell").value === "m" ? m : t;
+  const be = 1 / ((1 - fb) * (1 - fs)) - 1;
+  $("oBE").textContent = pct(be, 3); $("oBuyFee").textContent = usd(S * fb); $("oSellFee").textContent = usd(S * fs);
+  $("oRT").textContent = usd(S * (fb + fs)); $("oMo").textContent = usd(S * (fb + fs) * v("tN"));
+  $("oSave").textContent = usd(Math.max(0, S * (2 * t - 2 * m) * v("tN"))) + (lang === "ru" ? " / мес" : " / mo");
+  // validator
+  const share = Math.min(1, v("vMine") / Math.max(1, v("vAll"))), vf = v("vFee") / 100, vs = v("vShare") / 100, cost = v("vCost");
+  const day = V => V * vf * vs * share, net = V => day(V) * 30.4 - cost;
+  const V = v("vVol");
+  $("oVPct").textContent = pct(share); $("oVFees").textContent = usd(V * vf); $("oVDay").textContent = usd(day(V)); $("oVYr").textContent = usd(day(V) * 365);
+  const n = net(V); $("oVNet").textContent = usd(n); $("oVNet").className = n >= 0 ? "pos" : "neg";
+  const per = vf * vs * share * 30.4; $("oVBE").textContent = per > 0 ? usd(cost / per) : "∞";
+  $("vTable").tBodies[0].innerHTML = [1e4, 1e5, 1e6, 1e7].map(x => { const k = net(x); return `<tr><td>${usd(x)}</td><td class="${k >= 0 ? "pos" : "neg"}">${usd(k)}</td><td class="${k >= 0 ? "pos" : "neg"}">${usd(k * 12)}</td></tr>`; }).join("");
+  // staking
+  const pool = v("sVol") * v("sFee") / 100 * v("sShare") / 100, w = v("sMine") * v("sMult"), sp = Math.min(1, w / (v("sAll") + w - v("sMine"))), val = v("sMine") * v("sPrice");
+  const yr = pool * sp * 365;
+  $("oSPool").textContent = usd(pool); $("oSPct").textContent = pct(sp, 4); $("oSVal").textContent = usd(val) + " · " + tap(v("sMine"));
+  $("oSMo").textContent = usd(yr / 12); $("oSYr").textContent = usd(yr); $("oSAPR").textContent = val > 0 ? pct(yr / val) : "–";
+}
+function setLang(l) {
+  lang = l; document.documentElement.lang = l;
+  document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = (l === "ru" ? T.ru : EN)[e.dataset.t] ?? EN[e.dataset.t]);
+  $("lang-en").classList.toggle("on", l === "en"); $("lang-ru").classList.toggle("on", l === "ru");
+  try { localStorage.setItem("hmc-lang", l); } catch (e) {}
+  calc();
+}
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("hide", s.id !== b.dataset.tab));
+});
+$("lang-en").onclick = () => setLang("en"); $("lang-ru").onclick = () => setLang("ru");
+$("theme").onclick = () => { const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; r.dataset.theme = dark ? "light" : "dark"; };
+document.querySelectorAll("input, select").forEach(e => e.addEventListener("input", calc));
+let saved = null; try { saved = localStorage.getItem("hmc-lang"); } catch (e) {}
+setLang(saved || (navigator.language.startsWith("ru") ? "ru" : "en"));
+</script>
+</body>
+</html>

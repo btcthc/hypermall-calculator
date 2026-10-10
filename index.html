@@ -165,6 +165,7 @@ th:first-child, td:first-child { text-align: left; }
   </section>
 
   <p class="note" data-t="note">Estimates only, not financial advice. Hypermall is an order-book exchange (maker/taker), not an AMM, so there is no impermanent loss — but token prices can still fall. Fee figures come from the <a href="https://docs.trac.network/real-world-examples/hypermall/fee-structure-in-hypermall" target="_blank" rel="noopener">Trac docs</a>. Hypermall has no public data API yet, so volume and staking totals are entered by hand. Nothing here connects to a wallet or asks for keys.</p>
+  <p class="note"><span id="views"></span> Made by <a href="https://github.com/btcthc" target="_blank" rel="noopener">btcthc</a> · also see <a href="https://github.com/btcthc/otc4ai" target="_blank" rel="noopener">OTC4AI</a>, AI market makers for TAP tokens.</p>
 </div>
 
 <script>
@@ -236,6 +237,16 @@ $("theme").onclick = () => { const r = document.documentElement, dark = r.datase
 document.querySelectorAll("input, select").forEach(e => e.addEventListener("input", calc));
 let saved = null; try { saved = localStorage.getItem("hmc-lang"); } catch (e) {}
 setLang(saved || (navigator.language.startsWith("ru") ? "ru" : "en"));
+// Visit counter (Abacus, no cookies, no signup): one hit per browser session, the rest only read it.
+(async () => {
+  let seen = false; try { seen = sessionStorage.getItem("hmc-seen") === "1"; } catch (e) {}
+  try {
+    const r = await fetch(`https://abacus.jasoncameron.dev/${seen ? "get" : "hit"}/btcthc-hypermall-calculator/views`);
+    const j = await r.json();
+    try { sessionStorage.setItem("hmc-seen", "1"); } catch (e) {}
+    if (j.value > 0) $("views").textContent = j.value.toLocaleString("en-US") + " views ·";
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>
